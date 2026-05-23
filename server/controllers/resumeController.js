@@ -115,23 +115,43 @@ export const updateResume = async (req, res) => {
 
     if (image) {
       const imageBufferData = fs.createReadStream(image.path);
-      const response = await imageKit.files.upload({
+      const baseUploadOptions = {
         file: imageBufferData,
         fileName: "resume.png",
         folder: "user-resumes",
-        transformation: {
-          pre:
-            "w-300,h-300,fo-face,z-0.75" +
-            (removeBackground ? ",e-bgremove" : ""),
-        },
-      });
+      };
+
+      let response;
+
+      try {
+        response = await imageKit.files.upload({
+          ...baseUploadOptions,
+          transformation: {
+            pre:
+              "w-300,h-300,fo-face,z-0.75" +
+              (removeBackground ? ",e-bgremove" : ""),
+          },
+        });
+      } catch (uploadError) {
+        if (removeBackground) {
+          console.warn(
+            "ImageKit background removal failed, falling back to normal upload:",
+            uploadError.message,
+          );
+
+          response = await imageKit.files.upload(baseUploadOptions);
+        } else {
+          throw uploadError;
+        }
+      }
+
       resumeDataCopy.personal_info.image = response.url;
     }
 
     const resume = await Resume.findOneAndUpdate(
       { _id: resumeId, userId },
       resumeDataCopy,
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!resume) {
