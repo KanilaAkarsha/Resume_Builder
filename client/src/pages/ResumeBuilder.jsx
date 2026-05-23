@@ -169,7 +169,7 @@ const ResumeBuilder = () => {
       <div className="max-w-7xl mx-auto pb-8 px-4">
         <div className="grid lg:grid-cols-12 gap-8">
           {/* left column : form */}
-          <div className="relative lg:col-span-5 rounded-lg overflow-hidden">
+          <div className="relative lg:col-span-5 rounded-lg overflow-visible">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 pt-1">
               <hr className="absolute top-0 left-0 right-0 border-2 border-gray-200" />
               <hr
