@@ -1,6 +1,7 @@
 import imageKit from "../configs/imagekit.js";
 import Resume from "../models/Resume.js";
-import fs from "fs";
+import fs from "node:fs";
+import mongoose from "mongoose";
 
 export const createResume = async (req, res) => {
   try {
@@ -67,11 +68,34 @@ export const getPublicResumeById = async (req, res) => {
   try {
     const { resumeId } = req.params;
 
-    const resume = await Resume.findOne({ _id: resumeId, isPublic: true });
+    // The schema uses `public` as the field name. Query that field.
+    console.log("getPublicResumeById: looking up resumeId=", resumeId);
+
+    // If the URL accidentally contains the title or extra text (e.g. "<id> My Resume!"),
+    // extract the first whitespace-delimited token and validate it as an ObjectId.
+    const idToken = String(resumeId).split(" ")[0];
+    if (!mongoose.isValidObjectId(idToken)) {
+      console.warn("getPublicResumeById: invalid resume id token:", idToken);
+      return res.status(400).json({ message: "Invalid resume id" });
+    }
+
+    // Accept either `public` or legacy `isPublic` field to be tolerant of past data.
+    const resume = await Resume.findOne({
+      _id: idToken,
+      $or: [{ public: true }, { isPublic: true }],
+    });
+    console.log("getPublicResumeById: result=", !!resume);
 
     if (!resume) {
       return res.status(404).json({ message: "Resume not found" });
     }
+
+    // Hide internal fields before returning
+    resume.__v = undefined;
+    resume.createdAt = undefined;
+    resume.updatedAt = undefined;
+
+    console.log("getPublicResumeById: returning resume", resume._id);
 
     return res.status(200).json({ resume });
   } catch (error) {
@@ -85,7 +109,9 @@ export const updateResume = async (req, res) => {
     const userId = req.userId;
     const { resumeId, resumeData, removeBackground } = req.body;
     const image = req.file;
-    let resumeDataCopy = JSON.parse(resumeData);
+    const parsedResumeData =
+      typeof resumeData === "string" ? JSON.parse(resumeData) : resumeData;
+    let resumeDataCopy = structuredClone(parsedResumeData);
 
     if (image) {
       const imageBufferData = fs.createReadStream(image.path);
@@ -102,11 +128,15 @@ export const updateResume = async (req, res) => {
       resumeDataCopy.personal_info.image = response.url;
     }
 
-    const resume = await Resume.findByIdAndUpdate(
+    const resume = await Resume.findOneAndUpdate(
       { _id: resumeId, userId },
       resumeDataCopy,
       { new: true },
     );
+
+    if (!resume) {
+      return res.status(404).json({ message: "Resume not found" });
+    }
 
     return res
       .status(200)

@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import Resume from "../models/Resume.js";
 import ai from "../configs/ai.js";
 
@@ -15,12 +14,15 @@ export const enhanceProfessionalSummary = async (req, res) => {
       contents: [
         {
           role: "system",
-          content:
-            "You are an expert resume writer. Your task is to enhance the professional summary for a resume based on the user's input. Make it more impactful and concise while highlighting key skills and achievements, exprience. Avoid adding any new information that is not provided by the user.Make it compelling and ATS friendly.and only return text no options or anything else.",
+          parts: [
+            {
+              text: "You are an expert resume writer. Your task is to enhance the professional summary for a resume based on the user's input. Make it more impactful and concise while highlighting key skills and achievements, exprience. Avoid adding any new information that is not provided by the user.Make it compelling and ATS friendly.and only return text no options or anything else.",
+            },
+          ],
         },
         {
           role: "user",
-          content: userContent,
+          parts: [{ text: userContent }],
         },
       ],
     });
@@ -45,12 +47,15 @@ export const enhanceJobDescription = async (req, res) => {
       contents: [
         {
           role: "system",
-          content:
-            "You are an expert resume writer. Your task is to enhance the job description for a resume based on the user's input. Make it more impactful and concise while highlighting key skills and achievements, exprience. Avoid adding any new information that is not provided by the user.Make it compelling and ATS friendly.and only return text no options or anything else.",
+          parts: [
+            {
+              text: "You are an expert resume writer. Your task is to enhance the job description for a resume based on the user's input. Make it more impactful and concise while highlighting key skills and achievements, exprience. Avoid adding any new information that is not provided by the user.Make it compelling and ATS friendly.and only return text no options or anything else.",
+            },
+          ],
         },
         {
           role: "user",
-          content: userContent,
+          parts: [{ text: userContent }],
         },
       ],
     });
@@ -62,10 +67,47 @@ export const enhanceJobDescription = async (req, res) => {
   }
 };
 
+export const enhanceProjectDescription = async (req, res) => {
+  try {
+    const { userContent } = req.body;
+    if (!userContent) {
+      return res.status(400).json({ message: "User content is required" });
+    }
+
+    // Call AI service to enhance the project description
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [
+        {
+          role: "system",
+          parts: [
+            {
+              text: "You are an expert resume writer. Your task is to enhance the project description for a resume based on the user's input. Make it more impactful and concise while highlighting key skills and achievements, exprience. Avoid adding any new information that is not provided by the user.Make it compelling and ATS friendly.and only return text no options or anything else.",
+            },
+          ],
+        },
+        {
+          role: "user",
+          parts: [{ text: userContent }],
+        },
+      ],
+    });
+    const enhancedProjectDescription = response.text;
+    return res.status(200).json({ enhancedProjectDescription });
+  } catch (error) {
+    console.error("Error processing request:", error);
+    return res.status(400).json({ error: error.message });
+  }
+};
+
 export const uploadResume = async (req, res) => {
   try {
     const { resumeText, title } = req.body;
     const userId = req.userId; // Assuming userId is set in the request object after authentication
+
+    if (!title) {
+      return res.status(400).json({ message: "Resume title is required" });
+    }
 
     if (!resumeText) {
       return res.status(400).json({ message: "Resume text is required" });
@@ -189,19 +231,47 @@ export const uploadResume = async (req, res) => {
       contents: [
         {
           role: "system",
-          content: systemPrompt,
+          parts: [{ text: systemPrompt }],
         },
         {
           role: "user",
-          content: userPrompt,
+          parts: [{ text: userPrompt }],
         },
       ],
       responseFormat: {
         type: "json_object",
       },
     });
-    const enhancedResume = response.text;
-    const parsedResume = JSON.parse(enhancedResume);
+
+    const enhancedResume = response.text?.trim();
+
+    if (!enhancedResume) {
+      return res.status(502).json({
+        message:
+          "AI service returned an empty response while processing the resume",
+      });
+    }
+
+    const jsonMatch = /\{[\s\S]*\}/.exec(enhancedResume);
+
+    if (!jsonMatch) {
+      return res.status(422).json({
+        message: "AI response did not contain valid JSON",
+        rawResponse: enhancedResume,
+      });
+    }
+
+    let parsedResume;
+
+    try {
+      parsedResume = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      return res.status(422).json({
+        message: "AI returned malformed JSON for the resume data",
+        error: parseError.message,
+      });
+    }
+
     const newResume = await Resume.create({
       userId,
       title,
@@ -210,6 +280,6 @@ export const uploadResume = async (req, res) => {
     return res.status(200).json({ resumeId: newResume._id });
   } catch (error) {
     console.error("Error processing request:", error);
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ message: error.message });
   }
 };
