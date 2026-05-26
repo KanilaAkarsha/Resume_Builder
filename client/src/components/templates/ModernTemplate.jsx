@@ -71,9 +71,7 @@ const ModernTemplate = ({ data, accentColor }) => {
       <div className="p-8">
         {/* Professional Summary */}
         {data.professional_summary && (
-          <section
-            className="mb-8"
-            style={{ breakInside: "avoid-page", pageBreakInside: "avoid" }}>
+          <section className="mb-8">
             <h2 className="text-2xl font-light mb-4 pb-2 border-b border-gray-200">
               Professional Summary
             </h2>
@@ -83,9 +81,7 @@ const ModernTemplate = ({ data, accentColor }) => {
 
         {/* Experience */}
         {data.experience && data.experience.length > 0 && (
-          <section
-            className="mb-8"
-            style={{ breakInside: "avoid-page", pageBreakInside: "avoid" }}>
+          <section className="mb-8">
             <h2 className="text-2xl font-light mb-6 pb-2 border-b border-gray-200">
               Experience
             </h2>
@@ -93,12 +89,8 @@ const ModernTemplate = ({ data, accentColor }) => {
             <div className="space-y-6">
               {data.experience.map((exp, index) => (
                 <div
-                  key={`${exp.company || "company"}-${exp.position || "position"}-${exp.start_date || "start"}-${exp.end_date || "end"}`}
-                  className="relative pl-6 border-l border-gray-200"
-                  style={{
-                    breakInside: "avoid-page",
-                    pageBreakInside: "avoid",
-                  }}>
+                  key={index}
+                  className="relative pl-6 border-l border-gray-200">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-xl font-medium text-gray-900">
@@ -126,9 +118,7 @@ const ModernTemplate = ({ data, accentColor }) => {
 
         {/* Projects */}
         {data.projects && data.projects.length > 0 && (
-          <section
-            className="mb-8"
-            style={{ breakInside: "avoid-page", pageBreakInside: "avoid" }}>
+          <section className="mb-8">
             <h2 className="text-2xl font-light mb-4 pb-2 border-b border-gray-200">
               Projects
             </h2>
@@ -136,13 +126,9 @@ const ModernTemplate = ({ data, accentColor }) => {
             <div className="space-y-6">
               {data.projects.map((p, index) => (
                 <div
-                  key={`${p.name || "project"}-${p.type || "type"}`}
+                  key={index}
                   className="relative pl-6 border-l border-gray-200"
-                  style={{
-                    borderLeftColor: accentColor,
-                    breakInside: "avoid-page",
-                    pageBreakInside: "avoid",
-                  }}>
+                  style={{ borderLeftColor: accentColor }}>
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">
@@ -164,20 +150,14 @@ const ModernTemplate = ({ data, accentColor }) => {
         <div className="grid sm:grid-cols-2 gap-8">
           {/* Education */}
           {data.education && data.education.length > 0 && (
-            <section
-              style={{ breakInside: "avoid-page", pageBreakInside: "avoid" }}>
+            <section>
               <h2 className="text-2xl font-light mb-4 pb-2 border-b border-gray-200">
                 Education
               </h2>
 
               <div className="space-y-4">
                 {data.education.map((edu, index) => (
-                  <div
-                    key={`${edu.institution || "institution"}-${edu.degree || "degree"}-${edu.graduation_date || "date"}`}
-                    style={{
-                      breakInside: "avoid-page",
-                      pageBreakInside: "avoid",
-                    }}>
+                  <div key={index}>
                     <h3 className="font-semibold text-gray-900">
                       {edu.degree} {edu.field && `in ${edu.field}`}
                     </h3>
@@ -194,8 +174,7 @@ const ModernTemplate = ({ data, accentColor }) => {
 
           {/* Skills */}
           {data.skills && data.skills.length > 0 && (
-            <section
-              style={{ breakInside: "avoid-page", pageBreakInside: "avoid" }}>
+            <section>
               <h2 className="text-2xl font-light mb-4 pb-2 border-b border-gray-200">
                 Skills
               </h2>
@@ -203,7 +182,7 @@ const ModernTemplate = ({ data, accentColor }) => {
               <div className="flex flex-wrap gap-2">
                 {data.skills.map((skill, index) => (
                   <span
-                    key={skill}
+                    key={index}
                     className="px-3 py-1 text-sm text-white rounded-full"
                     style={{ backgroundColor: accentColor }}>
                     {skill}
